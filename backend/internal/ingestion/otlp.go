@@ -9,6 +9,7 @@ import (
 	"github.com/sarosobserv/sarosobserv/backend/internal/telemetry"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/pdata/ptrace/ptraceotlp"
 
@@ -77,6 +78,8 @@ func (s *OTLPServer) StartGRPC(ctx context.Context) error {
 			server: s,
 		},
 	)
+
+	plogotlp.RegisterGRPCServer(server, &logService{storage: s.storage})
 
 	log.Printf(
 		"OTLP gRPC server listening on %s",
@@ -218,6 +221,7 @@ func processPTrace(
 					EndTime:    endTime,
 					DurationNs: durationNs,
 
+					Kind:   span.Kind().String(),
 					Status: "ok",
 
 					Attributes: convertPAttributes(

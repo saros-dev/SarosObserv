@@ -34,7 +34,40 @@ export interface TraceResponse {
   spans: Span[];
 }
 
+export interface RequestBucket {
+  start: string;
+  requests: number;
+  errors: number;
+}
+
+export interface RequestOverview {
+  buckets: RequestBucket[];
+  failed: { trace_id: string; span_id: string; service_name: string; operation: string; start: string }[];
+}
+
+export interface TraceLog {
+  id: string;
+  timestamp: string;
+  service_name: string;
+  span_id: string;
+  severity: string;
+  message: string;
+  attributes: Record<string, string>;
+}
+
 export const api = {
+  async getRequestOverview(signal: AbortSignal): Promise<RequestOverview> {
+    const response = await fetch(`${API_BASE}/overview/requests`, { signal });
+    if (!response.ok) throw new Error(`Could not load request activity (${response.status})`);
+    return response.json();
+  },
+
+  async getTraceLogs(traceId: string, signal: AbortSignal): Promise<{ logs: TraceLog[] }> {
+    const response = await fetch(`${API_BASE}/traces/${encodeURIComponent(traceId)}/logs`, { signal });
+    if (!response.ok) throw new Error(`Could not load related logs (${response.status})`);
+    return response.json();
+  },
+
   async getServices(): Promise<{ services: Service[] }> {
     const response = await fetch(`${API_BASE}/services`);
     if (!response.ok) {

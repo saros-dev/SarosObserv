@@ -32,6 +32,23 @@ This starts:
 
 Open your browser to: http://localhost:3000
 
+## Investigate a request failure
+
+Open **Overview** to see requests and errors by minute and open a recent failed
+request. Its **Trace Detail** shows spans and up to 100 recent logs sharing the
+trace ID. Request counts come from OpenTelemetry spans of kind `SERVER`, and an
+error is a server span with OpenTelemetry status `ERROR`. Older spans stored
+before span kind was captured still appear in the trace explorer.
+
+With the stack running, send example checkout telemetry over OTLP/gRPC:
+
+```bash
+go run ./examples/go/investigation
+```
+
+Refresh Overview and select a failed `checkout-demo` request to see its
+payment timeout log and attributes.
+
 ## Connect Your Application
 
 Set the following environment variable in your application:
