@@ -18,6 +18,7 @@ type SpanData struct {
 	StartTime     time.Time
 	EndTime       time.Time
 	DurationNs    uint64
+	Kind          string
 	Status        string
 	StatusMessage string
 	Attributes    map[string]string
@@ -57,6 +58,9 @@ type TraceSummary struct {
 type Storage interface {
 	StoreTrace(ctx context.Context, trace TraceData) error
 	StoreSpan(ctx context.Context, span SpanData) error
+	StoreLogs(ctx context.Context, logs []LogRecord) error
+	ListTraceLogs(ctx context.Context, traceID string) ([]LogRecord, error)
+	RequestOverview(ctx context.Context, now time.Time) (RequestOverview, error)
 
 	ListServices(ctx context.Context) ([]ServiceInfo, error)
 	ListTraces(ctx context.Context, limit int) ([]TraceSummary, error)
@@ -147,6 +151,7 @@ func (s *ClickHouseStorage) StoreSpan(
 			start_time,
 			end_time,
 			duration_ns,
+			kind,
 			status,
 			status_message,
 			attributes,
@@ -154,7 +159,7 @@ func (s *ClickHouseStorage) StoreSpan(
 		)
 		VALUES
 		(
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 		)
 	`
 
@@ -181,6 +186,7 @@ func (s *ClickHouseStorage) StoreSpan(
 		span.StartTime,
 		span.EndTime,
 		span.DurationNs,
+		span.Kind,
 		span.Status,
 		span.StatusMessage,
 		attributes,
@@ -349,6 +355,7 @@ func (s *ClickHouseStorage) GetTrace(
 			start_time,
 			end_time,
 			duration_ns,
+			kind,
 			status,
 			status_message,
 			attributes
@@ -386,6 +393,7 @@ func (s *ClickHouseStorage) GetTrace(
 			&span.StartTime,
 			&span.EndTime,
 			&span.DurationNs,
+			&span.Kind,
 			&span.Status,
 			&span.StatusMessage,
 			&span.Attributes,

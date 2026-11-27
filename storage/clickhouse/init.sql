@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS metrics (
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMM(timestamp)
 ORDER BY (metric_name, service_name, timestamp)
-TTL timestamp + INTERVAL 30 DAY;
+TTL toDateTime(timestamp) + INTERVAL 30 DAY;
 
 -- Logs table (for Phase 5)
 CREATE TABLE IF NOT EXISTS logs (
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS logs (
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMM(timestamp)
 ORDER BY (timestamp, service_name)
-TTL timestamp + INTERVAL 14 DAY;
+TTL toDateTime(timestamp) + INTERVAL 14 DAY;
 
 -- Service discovery table
 CREATE TABLE IF NOT EXISTS services (

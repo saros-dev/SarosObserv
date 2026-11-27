@@ -1,8 +1,12 @@
 package api
 
 import (
+	"encoding/hex"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -29,6 +33,8 @@ func (h *Handler) RegisterRoutes(router *gin.Engine) {
 		api.GET("/services", h.ListServices)
 		api.GET("/traces", h.ListTraces)
 		api.GET("/traces/:traceId", h.GetTrace)
+		api.GET("/traces/:traceId/logs", h.ListTraceLogs)
+		api.GET("/overview/requests", h.RequestOverview)
 	}
 }
 
@@ -124,4 +130,29 @@ func (h *Handler) GetTrace(c *gin.Context) {
 		"trace_id": traceID,
 		"spans":    spans,
 	})
+}
+
+func (h *Handler) ListTraceLogs(c *gin.Context) {
+	traceID := strings.ToLower(c.Param("traceId"))
+	if _, err := hex.DecodeString(traceID); len(traceID) != 32 || err != nil || traceID == strings.Repeat("0", 32) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "a valid trace ID is required"})
+		return
+	}
+	records, err := h.storage.ListTraceLogs(c.Request.Context(), traceID)
+	if err != nil {
+		log.Printf("List trace logs: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load trace logs"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"logs": records})
+}
+
+func (h *Handler) RequestOverview(c *gin.Context) {
+	result, err := h.storage.RequestOverview(c.Request.Context(), time.Now())
+	if err != nil {
+		log.Printf("Load request overview: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load request overview"})
+		return
+	}
+	c.JSON(http.StatusOK, result)
 }

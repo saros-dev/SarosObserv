@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { GitBranch, Activity, Clock, ChevronRight, ChevronDown } from 'lucide-react'
 import { api, Span } from '../api/client'
+import TraceLogs from '../components/TraceLogs'
 
 const TraceDetail = () => {
   const { traceId } = useParams<{ traceId: string }>()
@@ -11,19 +12,24 @@ const TraceDetail = () => {
   const [expandedSpans, setExpandedSpans] = useState<Set<string>>(new Set())
 
   useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    setExpandedSpans(new Set())
     const fetchTrace = async () => {
       if (!traceId) return
       try {
         const data = await api.getTrace(traceId)
-        setSpans(data.spans)
+        if (!cancelled) setSpans(data.spans)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load trace')
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load trace')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchTrace()
+    return () => { cancelled = true }
   }, [traceId])
 
   const toggleSpan = (spanId: string) => {
@@ -101,6 +107,8 @@ const TraceDetail = () => {
         <h1 className="text-3xl font-bold text-gray-900">Trace Detail</h1>
         <p className="mt-2 text-gray-600 font-mono text-sm">{traceId}</p>
       </div>
+
+      {traceId && <TraceLogs key={traceId} traceId={traceId} />}
 
       {spans.length === 0 ? (
         <div className="card">
